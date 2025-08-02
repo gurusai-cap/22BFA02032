@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, AppBar, Toolbar, Typography, Container, Box, Link } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import logger from './utils/logger';
 import UrlShortener from './components/UrlShortener';
 import Statistics from './components/Statistics';
 import RedirectHandler from './components/RedirectHandler';
@@ -25,10 +24,6 @@ const theme = createTheme({
 });
 
 function App() {
-  React.useEffect(() => {
-    logger.info('Application started', { version: '1.0.0' }, 'App');
-  }, []);
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

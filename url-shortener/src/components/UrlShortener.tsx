@@ -9,9 +9,7 @@ import {
   Alert,
   Chip,
   IconButton,
-  Collapse,
-  Paper,
-  Divider
+  Paper
 } from '@mui/material';
 
 import {
@@ -20,7 +18,6 @@ import {
   ContentCopy as CopyIcon,
   Check as CheckIcon
 } from '@mui/icons-material';
-import logger from '../utils/logger';
 import urlService from '../services/urlService';
 import { UrlFormData, UrlFormErrors, ShortenedUrl } from '../types';
 
@@ -54,7 +51,6 @@ const UrlShortener: React.FC = () => {
         forms: [...prev.forms, initialFormData],
         errors: [...prev.errors, {}]
       }));
-      logger.info('Added new URL form', { formCount: state.forms.length + 1 }, 'UrlShortener');
     }
   };
 
@@ -66,7 +62,6 @@ const UrlShortener: React.FC = () => {
         errors: prev.errors.filter((_, i) => i !== index),
         results: prev.results.filter((_, i) => i !== index)
       }));
-      logger.info('Removed URL form', { formCount: state.forms.length - 1 }, 'UrlShortener');
     }
   };
 
@@ -85,7 +80,6 @@ const UrlShortener: React.FC = () => {
   const validateForm = (form: UrlFormData): UrlFormErrors => {
     const errors: UrlFormErrors = {};
 
-    // Validate URL
     if (!form.originalUrl.trim()) {
       errors.originalUrl = 'URL is required';
     } else {
@@ -96,12 +90,10 @@ const UrlShortener: React.FC = () => {
       }
     }
 
-    // Validate validity minutes
     if (form.validityMinutes < 1 || form.validityMinutes > 525600) {
       errors.validityMinutes = 'Validity must be between 1 minute and 1 year';
     }
 
-    // Validate custom short code if provided
     if (form.customShortCode.trim()) {
       if (form.customShortCode.length < 3 || form.customShortCode.length > 20) {
         errors.customShortCode = 'Short code must be between 3 and 20 characters';
@@ -114,17 +106,13 @@ const UrlShortener: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    logger.info('URL shortening submission started', { formCount: state.forms.length }, 'UrlShortener');
-    
     setState(prev => ({ ...prev, loading: true, results: [] }));
 
-    // Validate all forms
     const allErrors = state.forms.map(validateForm);
     const hasErrors = allErrors.some(error => Object.keys(error).length > 0);
 
     if (hasErrors) {
       setState(prev => ({ ...prev, errors: allErrors, loading: false }));
-      logger.warn('Form validation failed', { errors: allErrors }, 'UrlShortener');
       return;
     }
 
@@ -143,13 +131,7 @@ const UrlShortener: React.FC = () => {
         results,
         loading: false
       }));
-
-      logger.info('URL shortening completed', { 
-        successful: results.filter(r => r !== null).length,
-        total: results.length
-      }, 'UrlShortener');
     } catch (error) {
-      logger.error('URL shortening failed', { error }, 'UrlShortener');
       setState(prev => ({ ...prev, loading: false }));
     }
   };
@@ -159,9 +141,8 @@ const UrlShortener: React.FC = () => {
       await navigator.clipboard.writeText(text);
       setState(prev => ({ ...prev, copiedIndex: index }));
       setTimeout(() => setState(prev => ({ ...prev, copiedIndex: null })), 2000);
-      logger.info('URL copied to clipboard', { url: text }, 'UrlShortener');
     } catch (error) {
-      logger.error('Failed to copy URL', { error }, 'UrlShortener');
+      console.error('Failed to copy URL:', error);
     }
   };
 
@@ -178,7 +159,6 @@ const UrlShortener: React.FC = () => {
         Shorten up to 5 URLs at once. Each URL will be valid for 30 minutes by default.
       </Typography>
 
-      {/* URL Forms */}
       <Card sx={{ mb: 4 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
@@ -264,7 +244,6 @@ const UrlShortener: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Results */}
       {state.results.length > 0 && (
         <Card>
           <CardContent>

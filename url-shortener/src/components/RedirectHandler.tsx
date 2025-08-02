@@ -13,7 +13,6 @@ import {
   OpenInNew as OpenInNewIcon,
   ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
-import logger from '../utils/logger';
 import urlService from '../services/urlService';
 
 const RedirectHandler: React.FC = () => {
@@ -37,12 +36,8 @@ const RedirectHandler: React.FC = () => {
       return;
     }
 
-    logger.info('Short URL accessed', { shortCode }, 'RedirectHandler');
-
-    // Record the click
     urlService.recordClick(shortCode, 'direct');
 
-    // Get the shortened URL
     const shortenedUrl = urlService.getShortenedUrl(shortCode);
 
     if (!shortenedUrl) {
@@ -51,7 +46,6 @@ const RedirectHandler: React.FC = () => {
         loading: false, 
         error: 'URL not found or has expired' 
       }));
-      logger.warn('URL not found or expired', { shortCode }, 'RedirectHandler');
       return;
     }
 
@@ -61,23 +55,11 @@ const RedirectHandler: React.FC = () => {
       originalUrl: shortenedUrl.originalUrl 
     }));
 
-    logger.info('URL found, preparing redirect', { 
-      shortCode, 
-      originalUrl: shortenedUrl.originalUrl 
-    }, 'RedirectHandler');
-
-    // Auto-redirect after 3 seconds
     const redirectTimer = setTimeout(() => {
       setState(prev => ({ ...prev, redirecting: true }));
-      logger.info('Auto-redirecting to original URL', { 
-        shortCode, 
-        originalUrl: shortenedUrl.originalUrl 
-      }, 'RedirectHandler');
       
-      // Open in new tab
       window.open(shortenedUrl.originalUrl, '_blank');
       
-      // Navigate back to home page
       setTimeout(() => {
         navigate('/');
       }, 1000);
@@ -89,10 +71,6 @@ const RedirectHandler: React.FC = () => {
   const handleManualRedirect = () => {
     if (state.originalUrl) {
       setState(prev => ({ ...prev, redirecting: true }));
-      logger.info('Manual redirect initiated', { 
-        shortCode, 
-        originalUrl: state.originalUrl 
-      }, 'RedirectHandler');
       
       window.open(state.originalUrl, '_blank');
       

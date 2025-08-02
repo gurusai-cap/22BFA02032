@@ -1,4 +1,3 @@
-import logger from '../utils/logger';
 import { 
   ShortenedUrl, 
   UrlShortenRequest, 
@@ -13,7 +12,6 @@ class UrlService {
 
   constructor() {
     this.loadUrlsFromStorage();
-    logger.info('URL Service initialized', { urlCount: this.shortenedUrls.length }, 'UrlService');
   }
 
   private generateShortCode(): string {
@@ -68,7 +66,7 @@ class UrlService {
   }
 
   private validateValidityMinutes(minutes: number): ValidationError | null {
-    if (minutes < 1 || minutes > 525600) { // Max 1 year
+    if (minutes < 1 || minutes > 525600) {
       return {
         field: 'validityMinutes',
         message: 'Validity must be between 1 minute and 1 year'
@@ -79,37 +77,27 @@ class UrlService {
   }
 
   async shortenUrl(request: UrlShortenRequest): Promise<UrlShortenResponse> {
-    logger.info('URL shortening request received', { request }, 'UrlService');
-    
     try {
-      // Validate original URL
       const urlValidation = this.validateUrl(request.originalUrl);
       if (urlValidation) {
-        logger.warn('Invalid URL provided', { url: request.originalUrl }, 'UrlService');
         return { success: false, error: urlValidation.message };
       }
 
-      // Validate custom short code if provided
       if (request.customShortCode) {
         const shortCodeValidation = this.validateShortCode(request.customShortCode);
         if (shortCodeValidation) {
-          logger.warn('Invalid custom short code', { shortCode: request.customShortCode }, 'UrlService');
           return { success: false, error: shortCodeValidation.message };
         }
       }
 
-      // Validate validity minutes if provided
-      const validityMinutes = request.validityMinutes || 30; // Default 30 minutes
+      const validityMinutes = request.validityMinutes || 30;
       const validityValidation = this.validateValidityMinutes(validityMinutes);
       if (validityValidation) {
-        logger.warn('Invalid validity minutes', { minutes: validityMinutes }, 'UrlService');
         return { success: false, error: validityValidation.message };
       }
 
-      // Generate or use custom short code
       const shortCode = request.customShortCode || this.generateShortCode();
       
-      // Create shortened URL
       const now = new Date();
       const expiresAt = new Date(now.getTime() + validityMinutes * 60000);
       
@@ -124,38 +112,23 @@ class UrlService {
         clicks: []
       };
 
-      // Add to storage
       this.shortenedUrls.push(shortenedUrl);
       this.usedShortCodes.add(shortCode);
       this.saveUrlsToStorage();
 
-      logger.info('URL shortened successfully', { 
-        shortCode, 
-        originalUrl: request.originalUrl,
-        expiresAt: expiresAt.toISOString()
-      }, 'UrlService');
-
       return { success: true, data: shortenedUrl };
     } catch (error) {
-      logger.error('Error shortening URL', { error, request }, 'UrlService');
       return { success: false, error: 'An unexpected error occurred' };
     }
   }
 
   async shortenMultipleUrls(requests: UrlShortenRequest[]): Promise<UrlShortenResponse[]> {
-    logger.info('Multiple URL shortening request received', { count: requests.length }, 'UrlService');
-    
     const results: UrlShortenResponse[] = [];
     
     for (const request of requests) {
       const result = await this.shortenUrl(request);
       results.push(result);
     }
-    
-    logger.info('Multiple URL shortening completed', { 
-      total: requests.length, 
-      successful: results.filter(r => r.success).length 
-    }, 'UrlService');
     
     return results;
   }
@@ -164,16 +137,12 @@ class UrlService {
     const url = this.shortenedUrls.find(u => u.shortCode === shortCode);
     
     if (url) {
-      // Check if URL has expired
       if (new Date() > new Date(url.expiresAt)) {
-        logger.warn('Attempted to access expired URL', { shortCode }, 'UrlService');
         return null;
       }
       
-      logger.info('URL accessed', { shortCode, originalUrl: url.originalUrl }, 'UrlService');
       return url;
     } else {
-      logger.warn('URL not found', { shortCode }, 'UrlService');
       return null;
     }
   }
@@ -186,7 +155,7 @@ class UrlService {
         id: this.generateId(),
         timestamp: new Date().toISOString(),
         source,
-        location: 'Unknown', // In a real app, this would be determined by IP geolocation
+        location: 'Unknown',
         userAgent: navigator.userAgent
       };
       
@@ -194,12 +163,6 @@ class UrlService {
       url.clickCount++;
       
       this.saveUrlsToStorage();
-      
-      logger.info('Click recorded', { 
-        shortCode, 
-        source, 
-        totalClicks: url.clickCount 
-      }, 'UrlService');
     }
   }
 
@@ -216,7 +179,7 @@ class UrlService {
       localStorage.setItem('shortenedUrls', JSON.stringify(this.shortenedUrls));
       localStorage.setItem('usedShortCodes', JSON.stringify(Array.from(this.usedShortCodes)));
     } catch (error) {
-      logger.error('Failed to save URLs to storage', { error }, 'UrlService');
+      console.error('Failed to save URLs to storage:', error);
     }
   }
 
@@ -232,13 +195,8 @@ class UrlService {
       if (storedCodes) {
         this.usedShortCodes = new Set(JSON.parse(storedCodes));
       }
-      
-      logger.info('URLs loaded from storage', { 
-        urlCount: this.shortenedUrls.length,
-        codeCount: this.usedShortCodes.size
-      }, 'UrlService');
     } catch (error) {
-      logger.error('Failed to load URLs from storage', { error }, 'UrlService');
+      console.error('Failed to load URLs from storage:', error);
     }
   }
 
@@ -249,10 +207,6 @@ class UrlService {
     
     if (beforeCount !== afterCount) {
       this.saveUrlsToStorage();
-      logger.info('Expired URLs cleared', { 
-        removed: beforeCount - afterCount,
-        remaining: afterCount
-      }, 'UrlService');
     }
   }
 }

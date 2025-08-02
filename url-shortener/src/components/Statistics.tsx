@@ -16,10 +16,6 @@ import {
   Collapse,
   Alert,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   List,
   ListItem,
   ListItemText,
@@ -32,9 +28,8 @@ import {
   Check as CheckIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import logger from '../utils/logger';
 import urlService from '../services/urlService';
-import { ShortenedUrl, ClickData } from '../types';
+import { ShortenedUrl } from '../types';
 
 interface StatisticsState {
   urls: ShortenedUrl[];
@@ -53,7 +48,6 @@ const Statistics: React.FC = () => {
 
   useEffect(() => {
     loadUrls();
-    logger.info('Statistics page loaded', {}, 'Statistics');
   }, []);
 
   const loadUrls = () => {
@@ -66,10 +60,7 @@ const Statistics: React.FC = () => {
         urls: urls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
         loading: false 
       }));
-      
-      logger.info('URLs loaded for statistics', { count: urls.length }, 'Statistics');
     } catch (error) {
-      logger.error('Failed to load URLs for statistics', { error }, 'Statistics');
       setState(prev => ({ ...prev, loading: false }));
     }
   };
@@ -91,9 +82,8 @@ const Statistics: React.FC = () => {
       await navigator.clipboard.writeText(text);
       setState(prev => ({ ...prev, copiedUrl: text }));
       setTimeout(() => setState(prev => ({ ...prev, copiedUrl: null })), 2000);
-      logger.info('URL copied to clipboard from statistics', { url: text }, 'Statistics');
     } catch (error) {
-      logger.error('Failed to copy URL from statistics', { error }, 'Statistics');
+      console.error('Failed to copy URL from statistics:', error);
     }
   };
 
@@ -119,7 +109,7 @@ const Statistics: React.FC = () => {
   const getStatusColor = (expiresAt: string) => {
     if (isExpired(expiresAt)) return 'error';
     const timeLeft = new Date(expiresAt).getTime() - new Date().getTime();
-    if (timeLeft < 5 * 60 * 1000) return 'warning'; // Less than 5 minutes
+    if (timeLeft < 5 * 60 * 1000) return 'warning';
     return 'success';
   };
 
@@ -256,8 +246,7 @@ const Statistics: React.FC = () => {
                         </TableCell>
                       </TableRow>
                       
-                      {/* Expanded row for click details */}
-                      <TableRow>
+                                        <TableRow>
                         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
                           <Collapse in={state.expandedRows.has(url.id)} timeout="auto" unmountOnExit>
                             <Box sx={{ margin: 1 }}>
